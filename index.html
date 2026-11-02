@@ -24,8 +24,8 @@ footer{color:var(--muted);font-size:12px;text-align:center;margin-top:20px}
   <div class="brand"><div class="logo">🎙️</div><div><h1>StoryVoice <span class="pill">FREE TTS</span></h1><p>Text to speech untuk storytelling • berjalan di browser</p></div></div>
   <section class="panel">
     <label for="script">Naskah cerita</label>
-    <textarea id="script" maxlength="12000" placeholder="Tempel naskah storytelling kamu di sini...">Every great story begins with a moment nobody expects. He had lost everything, but deep inside, he knew this was not the end. It was the beginning of a new chapter.</textarea>
-    <div class="hint"><span id="count">0</span>/12.000 karakter. Untuk hasil terbaik, proses naskah panjang dalam beberapa bagian.</div>
+    <textarea id="script" maxlength="5000" placeholder="Tempel naskah storytelling kamu di sini...">Every great story begins with a moment nobody expects. He had lost everything, but deep inside, he knew this was not the end. It was the beginning of a new chapter.</textarea>
+    <div class="hint"><span id="count">0</span>/5.000 karakter. Disarankan maksimal 5.000 karakter per proses; HP dengan memori terbatas sebaiknya menggunakan naskah lebih pendek.</div>
   </section>
   <section class="panel">
     <div class="grid">
@@ -62,7 +62,7 @@ footer{color:var(--muted);font-size:12px;text-align:center;margin-top:20px}
   </section>
   <section class="panel">
     <b>Catatan penggunaan gratis</b>
-    <p class="small">Pemrosesan dilakukan di perangkat setelah model selesai dimuat. Model dan library diambil dari CDN/Hugging Face saat pertama kali digunakan. Tidak ada server berbayar dari aplikasi ini. Jangan tutup tab saat proses berlangsung.</p>
+    <p class="small">Pemrosesan dilakukan di perangkat setelah model selesai dimuat. Model dan library diambil dari CDN/Hugging Face saat pertama kali digunakan. Proses berjalan di perangkat; kecepatan bergantung pada HP dan browser. Untuk Android, gunakan naskah bertahap dan jangan tutup tab saat proses berlangsung.</p>
   </section>
   <footer>StoryVoice • Prototype browser TTS • Tidak mengunggah naskah ke server aplikasi</footer>
 </main>
@@ -71,7 +71,8 @@ import { KokoroTTS } from 'https://cdn.jsdelivr.net/npm/kokoro-js@1.2.1/+esm';
 
 const $ = id => document.getElementById(id);
 let tts = null, busy = false, latestUrl = null, stopRequested = false;
-const setStatus = (s,p=null) => { $('status').textContent=s; if(p!==null)$('progress').style.width=p+'%'; };
+const setStatus = (s,p=null) => { $('status').textContent=s; if(p!==null)$('progress').style.width=Math.max(0,Math.min(100,p))+'%'; };
+const yieldUI = () => new Promise(resolve => setTimeout(resolve, 30));
 const updateCount=()=> $('count').textContent=$('script').value.length;
 $('script').addEventListener('input',updateCount); updateCount();
 $('clear').onclick=()=>{$('script').value='';updateCount();};
@@ -84,7 +85,7 @@ function toWav(float32, sampleRate){
   let offset=44;for(let i=0;i<float32.length;i++,offset+=2){let s=Math.max(-1,Math.min(1,float32[i]));view.setInt16(offset,s<0?s*0x8000:s*0x7fff,true);}
   return new Blob([buffer],{type:'audio/wav'});
 }
-function splitText(text,max=420){
+function splitText(text,max=180){
   const sentences=text.match(/[^.!?。！？]+[.!?。！？]?/g)||[text], chunks=[];let current='';
   for(const sentence of sentences){if((current+' '+sentence).trim().length<=max){current=(current+' '+sentence).trim();continue;}
     if(current)chunks.push(current);
@@ -96,11 +97,11 @@ $('generate').onclick=async()=>{
  if(busy)return;const text=$('script').value.trim();if(!text){setStatus('Masukkan naskah terlebih dahulu.');return;}
  busy=true;stopRequested=false;$('generate').disabled=true;$('stop').disabled=false;$('download').disabled=true;
  try{
-   if(!tts){setStatus('Memuat mesin Kokoro AI. Pengunduhan model pertama kali bisa memerlukan waktu dan koneksi internet...');tts=await KokoroTTS.from_pretrained('onnx-community/Kokoro-82M-v1.0-ONNX',{dtype:'q8',device:'wasm'});}
+   if(!tts){setStatus('Mengunduh dan menyiapkan model AI. Pertama kali bisa memerlukan beberapa menit. Jangan tutup tab...',0); await yieldUI(); tts=await KokoroTTS.from_pretrained('onnx-community/Kokoro-82M-v1.0-ONNX',{dtype:'q8',device:'wasm',progress_callback:(info)=>{const pct=Number(info?.progress); if(Number.isFinite(pct)) setStatus(`Mengunduh model AI: ${Math.round(pct)}%`,Math.round(pct));}}); setStatus('Model siap. Menyiapkan pembuatan audio...',0); await yieldUI();}
    const chunks=splitText(text);let audioParts=[],sampleRate=24000;
    for(let i=0;i<chunks.length;i++){
      if(stopRequested)break;
-     setStatus(`Membuat audio bagian ${i+1}/${chunks.length}...`,Math.round(i/chunks.length*100));
+     setStatus(`Membuat audio bagian ${i+1}/${chunks.length} dari ${chunks.length}. Bagian pendek membantu HP bekerja lebih stabil.`,Math.round(i/chunks.length*100)); await yieldUI();
      const out=await tts.generate(chunks[i],{voice:$('voice').value});
      sampleRate=out.sampling_rate||sampleRate;
      audioParts.push(out.audio instanceof Float32Array?out.audio:new Float32Array(out.audio));
