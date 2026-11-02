@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>StoryVoice — Free Text to Audio</title>
+<style>
+:root{--bg:#0b1020;--panel:#141c31;--muted:#9eabc4;--text:#f4f7ff;--accent:#8b7cff;--line:#293653}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(900px 500px at 80% -10%,#302b68 0%,transparent 55%),var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+main{max-width:900px;margin:auto;padding:28px 16px 60px}.brand{display:flex;align-items:center;gap:12px;margin-bottom:22px}.logo{width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,#9d8cff,#4b9bff);display:grid;place-items:center;font-size:23px}.brand h1{font-size:22px;margin:0}.brand p{margin:2px 0 0;color:var(--muted);font-size:13px}
+.panel{background:rgba(20,28,49,.94);border:1px solid var(--line);border-radius:18px;padding:20px;margin:14px 0;box-shadow:0 14px 40px #0002}
+label{display:block;font-weight:650;margin:0 0 8px}.hint{color:var(--muted);font-size:12px;margin-top:6px}
+textarea,select,input{width:100%;border:1px solid var(--line);background:#0d1528;color:var(--text);border-radius:11px;padding:12px;font:inherit}
+textarea{min-height:190px;resize:vertical}select{cursor:pointer}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+button{border:0;border-radius:11px;padding:12px 17px;font-weight:700;font-size:14px;cursor:pointer;background:#293653;color:var(--text)}button.primary{background:linear-gradient(135deg,#8b7cff,#587dff);color:white}button:disabled{opacity:.45;cursor:not-allowed}
+.status{padding:12px 14px;border-radius:11px;background:#0d1528;color:#c9d3e8;font-size:13px;margin-top:14px;white-space:pre-wrap}.bar{height:7px;background:#293653;border-radius:8px;overflow:hidden;margin-top:9px}.bar span{display:block;height:100%;width:0;background:#8b7cff;transition:width .2s}
+audio{width:100%;margin-top:14px}.small{font-size:12px;color:var(--muted)}.pill{display:inline-block;border:1px solid #435177;border-radius:30px;padding:3px 9px;font-size:11px;color:#c9c3ff;margin-left:6px}
+footer{color:var(--muted);font-size:12px;text-align:center;margin-top:20px}
+@media(max-width:620px){main{padding:20px 12px 40px}.grid{grid-template-columns:1fr}.panel{padding:16px}.brand h1{font-size:20px}}
+</style>
+</head>
+<body>
+<main>
+  <div class="brand"><div class="logo">🎙️</div><div><h1>StoryVoice <span class="pill">FREE TTS</span></h1><p>Text to speech untuk storytelling • berjalan di browser</p></div></div>
+  <section class="panel">
+    <label for="script">Naskah cerita</label>
+    <textarea id="script" maxlength="12000" placeholder="Tempel naskah storytelling kamu di sini...">Every great story begins with a moment nobody expects. He had lost everything, but deep inside, he knew this was not the end. It was the beginning of a new chapter.</textarea>
+    <div class="hint"><span id="count">0</span>/12.000 karakter. Untuk hasil terbaik, proses naskah panjang dalam beberapa bagian.</div>
+  </section>
+  <section class="panel">
+    <div class="grid">
+      <div><label for="voice">Karakter suara</label><select id="voice">
+        <option value="af_heart">Female — warm storyteller (US)</option>
+        <option value="af_bella">Female — expressive (US)</option>
+        <option value="af_nicole">Female — soft narration (US)</option>
+        <option value="am_michael">Male — mature narrator (US)</option>
+        <option value="am_fenrir">Male — deep dramatic (US)</option>
+        <option value="am_puck">Male — lively (US)</option>
+        <option value="bf_emma">Female — British</option>
+        <option value="bf_isabella">Female — British, gentle</option>
+        <option value="bm_george">Male — British</option>
+        <option value="bm_lewis">Male — British, warm</option>
+      </select></div>
+      <div><label>Bahasa suara</label><div class="status" style="margin:0">Model Kokoro versi ini mendukung bahasa Inggris (aksen Amerika dan Inggris). Naskah bahasa Indonesia tidak dijamin pengucapannya.</div></div>
+    </div>
+    <p class="hint">Kokoro 82M berjalan di browser. Model diunduh saat pertama kali digunakan; hasil audio dapat disimpan sebagai WAV.</p>
+    <div class="actions">
+      <button class="primary" id="generate">✨ Generate audio</button>
+      <button id="stop" disabled>Stop</button>
+      <button id="clear">Clear text</button>
+    </div>
+    <div class="status" id="status">Siap. Tekan Generate audio. Pada penggunaan pertama, browser akan mengunduh model AI (sekitar ratusan MB); koneksi internet diperlukan.</div>
+    <div class="bar"><span id="progress"></span></div>
+  </section>
+  <section class="panel">
+    <label>Preview & hasil audio</label>
+    <audio id="player" controls></audio>
+    <div class="actions">
+      <button class="primary" id="download" disabled>⬇ Download WAV</button>
+    </div>
+    <p class="small">File WAV dibuat langsung dari audio hasil model. Tidak perlu API key, akun, atau biaya per karakter. Perangkat harus cukup kuat untuk menjalankan model.</p>
+  </section>
+  <section class="panel">
+    <b>Catatan penggunaan gratis</b>
+    <p class="small">Pemrosesan dilakukan di perangkat setelah model selesai dimuat. Model dan library diambil dari CDN/Hugging Face saat pertama kali digunakan. Tidak ada server berbayar dari aplikasi ini. Jangan tutup tab saat proses berlangsung.</p>
+  </section>
+  <footer>StoryVoice • Prototype browser TTS • Tidak mengunggah naskah ke server aplikasi</footer>
+</main>
+<script type="module">
+import { KokoroTTS } from 'https://cdn.jsdelivr.net/npm/kokoro-js@1.2.1/+esm';
+
+const $ = id => document.getElementById(id);
+let tts = null, busy = false, latestUrl = null, stopRequested = false;
+const setStatus = (s,p=null) => { $('status').textContent=s; if(p!==null)$('progress').style.width=p+'%'; };
+const updateCount=()=> $('count').textContent=$('script').value.length;
+$('script').addEventListener('input',updateCount); updateCount();
+$('clear').onclick=()=>{$('script').value='';updateCount();};
+$('stop').onclick=()=>{stopRequested=true;setStatus('Permintaan berhenti diterima. Proses saat ini akan dihentikan setelah bagian yang sedang dibuat.');};
+$('download').onclick=()=>{if(!latestUrl)return;const a=document.createElement('a');a.href=latestUrl;a.download='storyvoice-narration.wav';a.click();};
+function toWav(float32, sampleRate){
+  const bytesPerSample=2, buffer=new ArrayBuffer(44+float32.length*bytesPerSample), view=new DataView(buffer);
+  const write=(o,s)=>{for(let i=0;i<s.length;i++)view.setUint8(o+i,s.charCodeAt(i));};
+  write(0,'RIFF');view.setUint32(4,36+float32.length*2,true);write(8,'WAVE');write(12,'fmt ');view.setUint32(16,16,true);view.setUint16(20,1,true);view.setUint16(22,1,true);view.setUint32(24,sampleRate,true);view.setUint32(28,sampleRate*2,true);view.setUint16(32,2,true);view.setUint16(34,16,true);write(36,'data');view.setUint32(40,float32.length*2,true);
+  let offset=44;for(let i=0;i<float32.length;i++,offset+=2){let s=Math.max(-1,Math.min(1,float32[i]));view.setInt16(offset,s<0?s*0x8000:s*0x7fff,true);}
+  return new Blob([buffer],{type:'audio/wav'});
+}
+function splitText(text,max=420){
+  const sentences=text.match(/[^.!?。！？]+[.!?。！？]?/g)||[text], chunks=[];let current='';
+  for(const sentence of sentences){if((current+' '+sentence).trim().length<=max){current=(current+' '+sentence).trim();continue;}
+    if(current)chunks.push(current);
+    if(sentence.length>max){let rest=sentence;while(rest.length>max){let cut=rest.lastIndexOf(' ',max);if(cut<100)cut=max;chunks.push(rest.slice(0,cut).trim());rest=rest.slice(cut).trim();}current=rest;}
+    else current=sentence.trim();
+  }if(current)chunks.push(current);return chunks;
+}
+$('generate').onclick=async()=>{
+ if(busy)return;const text=$('script').value.trim();if(!text){setStatus('Masukkan naskah terlebih dahulu.');return;}
+ busy=true;stopRequested=false;$('generate').disabled=true;$('stop').disabled=false;$('download').disabled=true;
+ try{
+   if(!tts){setStatus('Memuat mesin Kokoro AI. Pengunduhan model pertama kali bisa memerlukan waktu dan koneksi internet...');tts=await KokoroTTS.from_pretrained('onnx-community/Kokoro-82M-v1.0-ONNX',{dtype:'q8',device:'wasm'});}
+   const chunks=splitText(text);let audioParts=[],sampleRate=24000;
+   for(let i=0;i<chunks.length;i++){
+     if(stopRequested)break;
+     setStatus(`Membuat audio bagian ${i+1}/${chunks.length}...`,Math.round(i/chunks.length*100));
+     const out=await tts.generate(chunks[i],{voice:$('voice').value});
+     sampleRate=out.sampling_rate||sampleRate;
+     audioParts.push(out.audio instanceof Float32Array?out.audio:new Float32Array(out.audio));
+   }
+   if(!audioParts.length){setStatus('Proses dihentikan sebelum audio dibuat.');return;}
+   const total=audioParts.reduce((n,a)=>n+a.length,0),joined=new Float32Array(total);let pos=0;
+   for(const part of audioParts){joined.set(part,pos);pos+=part.length;}
+   const blob=toWav(joined,sampleRate);if(latestUrl)URL.revokeObjectURL(latestUrl);latestUrl=URL.createObjectURL(blob);
+   $('player').src=latestUrl;$('download').disabled=false;
+   setStatus(stopRequested?'Audio parsial berhasil dibuat.':'Selesai! Audio siap diputar dan diunduh sebagai WAV.',100);
+ }catch(err){console.error(err);setStatus('Gagal membuat audio: '+(err?.message||String(err))+'\nPeriksa koneksi internet, lalu coba lagi. Model membutuhkan browser modern dan memori perangkat yang cukup.');}
+ finally{busy=false;$('generate').disabled=false;$('stop').disabled=true;}
+};
+</script>
+</body>
+</html>
