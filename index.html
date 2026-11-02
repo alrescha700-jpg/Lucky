@@ -24,8 +24,8 @@ footer{color:var(--muted);font-size:12px;text-align:center;margin-top:20px}
   <div class="brand"><div class="logo">🎙️</div><div><h1>StoryVoice <span class="pill">FREE TTS</span></h1><p>Text to speech untuk storytelling • berjalan di browser</p></div></div>
   <section class="panel">
     <label for="script">Naskah cerita</label>
-    <textarea id="script" maxlength="5000" placeholder="Tempel naskah storytelling kamu di sini...">Every great story begins with a moment nobody expects. He had lost everything, but deep inside, he knew this was not the end. It was the beginning of a new chapter.</textarea>
-    <div class="hint"><span id="count">0</span>/5.000 karakter. Disarankan maksimal 5.000 karakter per proses; HP dengan memori terbatas sebaiknya menggunakan naskah lebih pendek.</div>
+    <textarea id="script" maxlength="12000" placeholder="Tempel naskah storytelling kamu di sini...">Every great story begins with a moment nobody expects. He had lost everything, but deep inside, he knew this was not the end. It was the beginning of a new chapter.</textarea>
+    <div class="hint"><span id="count">0</span>/12.000 karakter. Mode hemat memori: proses bertahap; naskah sangat panjang tetap membutuhkan waktu lebih lama.</div>
   </section>
   <section class="panel">
     <div class="grid">
@@ -41,9 +41,9 @@ footer{color:var(--muted);font-size:12px;text-align:center;margin-top:20px}
         <option value="bm_george">Male — British</option>
         <option value="bm_lewis">Male — British, warm</option>
       </select></div>
-      <div><label>Bahasa suara</label><div class="status" style="margin:0">Model Kokoro versi ini mendukung bahasa Inggris (aksen Amerika dan Inggris). Naskah bahasa Indonesia tidak dijamin pengucapannya.</div></div>
+      <div><label>Bahasa suara</label><div class="status" style="margin:0">Model ini paling baik untuk bahasa Inggris (aksen Amerika dan Inggris). Pelafalan bahasa Indonesia tidak dijamin.</div></div>
     </div>
-    <p class="hint">Kokoro 82M berjalan di browser. Model diunduh saat pertama kali digunakan; hasil audio dapat disimpan sebagai WAV.</p>
+    <p class="hint">Mode hemat memori menggunakan model quantized Q4. Model tetap berjalan di browser; hasil audio dapat disimpan sebagai WAV.</p>
     <div class="actions">
       <button class="primary" id="generate">✨ Generate audio</button>
       <button id="stop" disabled>Stop</button>
@@ -58,11 +58,11 @@ footer{color:var(--muted);font-size:12px;text-align:center;margin-top:20px}
     <div class="actions">
       <button class="primary" id="download" disabled>⬇ Download WAV</button>
     </div>
-    <p class="small">File WAV dibuat langsung dari audio hasil model. Tidak perlu API key, akun, atau biaya per karakter. Perangkat harus cukup kuat untuk menjalankan model.</p>
+    <p class="small">File WAV dibuat langsung dari audio hasil model. Tidak perlu API key, akun, atau biaya per karakter. Mode Q4 mengurangi ukuran model dan penggunaan memori, tetapi kecepatan tetap bergantung pada prosesor dan browser HP.</p>
   </section>
   <section class="panel">
     <b>Catatan penggunaan gratis</b>
-    <p class="small">Pemrosesan dilakukan di perangkat setelah model selesai dimuat. Model dan library diambil dari CDN/Hugging Face saat pertama kali digunakan. Proses berjalan di perangkat; kecepatan bergantung pada HP dan browser. Untuk Android, gunakan naskah bertahap dan jangan tutup tab saat proses berlangsung.</p>
+    <p class="small">Pemrosesan dilakukan di perangkat. Mode Q4 mengurangi kebutuhan memori dibanding Q8. Naskah panjang tetap membutuhkan waktu sesuai kemampuan HP. Jangan tutup tab saat proses berlangsung.</p>
   </section>
   <footer>StoryVoice • Prototype browser TTS • Tidak mengunggah naskah ke server aplikasi</footer>
 </main>
@@ -78,14 +78,7 @@ $('script').addEventListener('input',updateCount); updateCount();
 $('clear').onclick=()=>{$('script').value='';updateCount();};
 $('stop').onclick=()=>{stopRequested=true;setStatus('Permintaan berhenti diterima. Proses saat ini akan dihentikan setelah bagian yang sedang dibuat.');};
 $('download').onclick=()=>{if(!latestUrl)return;const a=document.createElement('a');a.href=latestUrl;a.download='storyvoice-narration.wav';a.click();};
-function toWav(float32, sampleRate){
-  const bytesPerSample=2, buffer=new ArrayBuffer(44+float32.length*bytesPerSample), view=new DataView(buffer);
-  const write=(o,s)=>{for(let i=0;i<s.length;i++)view.setUint8(o+i,s.charCodeAt(i));};
-  write(0,'RIFF');view.setUint32(4,36+float32.length*2,true);write(8,'WAVE');write(12,'fmt ');view.setUint32(16,16,true);view.setUint16(20,1,true);view.setUint16(22,1,true);view.setUint32(24,sampleRate,true);view.setUint32(28,sampleRate*2,true);view.setUint16(32,2,true);view.setUint16(34,16,true);write(36,'data');view.setUint32(40,float32.length*2,true);
-  let offset=44;for(let i=0;i<float32.length;i++,offset+=2){let s=Math.max(-1,Math.min(1,float32[i]));view.setInt16(offset,s<0?s*0x8000:s*0x7fff,true);}
-  return new Blob([buffer],{type:'audio/wav'});
-}
-function splitText(text,max=180){
+function splitText(text,max=420){
   const sentences=text.match(/[^.!?。！？]+[.!?。！？]?/g)||[text], chunks=[];let current='';
   for(const sentence of sentences){if((current+' '+sentence).trim().length<=max){current=(current+' '+sentence).trim();continue;}
     if(current)chunks.push(current);
@@ -97,19 +90,23 @@ $('generate').onclick=async()=>{
  if(busy)return;const text=$('script').value.trim();if(!text){setStatus('Masukkan naskah terlebih dahulu.');return;}
  busy=true;stopRequested=false;$('generate').disabled=true;$('stop').disabled=false;$('download').disabled=true;
  try{
-   if(!tts){setStatus('Mengunduh dan menyiapkan model AI. Pertama kali bisa memerlukan beberapa menit. Jangan tutup tab...',0); await yieldUI(); tts=await KokoroTTS.from_pretrained('onnx-community/Kokoro-82M-v1.0-ONNX',{dtype:'q8',device:'wasm',progress_callback:(info)=>{const pct=Number(info?.progress); if(Number.isFinite(pct)) setStatus(`Mengunduh model AI: ${Math.round(pct)}%`,Math.round(pct));}}); setStatus('Model siap. Menyiapkan pembuatan audio...',0); await yieldUI();}
+   if(!tts){setStatus('Mengunduh dan menyiapkan model AI. Pertama kali bisa memerlukan beberapa menit. Jangan tutup tab...',0); await yieldUI(); tts=await KokoroTTS.from_pretrained('onnx-community/Kokoro-82M-v1.0-ONNX',{dtype:'q4',device:'wasm',progress_callback:(info)=>{const pct=Number(info?.progress); if(Number.isFinite(pct)) setStatus(`Mengunduh model AI: ${Math.round(pct)}%`,Math.round(pct));}}); setStatus('Model siap. Menyiapkan pembuatan audio...',0); await yieldUI();}
    const chunks=splitText(text);let audioParts=[],sampleRate=24000;
    for(let i=0;i<chunks.length;i++){
      if(stopRequested)break;
-     setStatus(`Membuat audio bagian ${i+1}/${chunks.length} dari ${chunks.length}. Bagian pendek membantu HP bekerja lebih stabil.`,Math.round(i/chunks.length*100)); await yieldUI();
+     setStatus(`Membuat audio bagian ${i+1}/${chunks.length}. Mode Q4 hemat memori; proses satu bagian setiap kali.`,Math.round(i/chunks.length*100)); await yieldUI();
      const out=await tts.generate(chunks[i],{voice:$('voice').value});
      sampleRate=out.sampling_rate||sampleRate;
      audioParts.push(out.audio instanceof Float32Array?out.audio:new Float32Array(out.audio));
    }
    if(!audioParts.length){setStatus('Proses dihentikan sebelum audio dibuat.');return;}
-   const total=audioParts.reduce((n,a)=>n+a.length,0),joined=new Float32Array(total);let pos=0;
-   for(const part of audioParts){joined.set(part,pos);pos+=part.length;}
-   const blob=toWav(joined,sampleRate);if(latestUrl)URL.revokeObjectURL(latestUrl);latestUrl=URL.createObjectURL(blob);
+   const total=audioParts.reduce((n,a)=>n+a.length,0);
+   const wavBuffer=new ArrayBuffer(44+total*2),view=new DataView(wavBuffer);
+   const write=(o,s)=>{for(let i=0;i<s.length;i++)view.setUint8(o+i,s.charCodeAt(i));};
+   write(0,'RIFF');view.setUint32(4,36+total*2,true);write(8,'WAVE');write(12,'fmt ');view.setUint32(16,16,true);view.setUint16(20,1,true);view.setUint16(22,1,true);view.setUint32(24,sampleRate,true);view.setUint32(28,sampleRate*2,true);view.setUint16(32,2,true);view.setUint16(34,16,true);write(36,'data');view.setUint32(40,total*2,true);
+   let byteOffset=44;for(const part of audioParts){for(let i=0;i<part.length;i++,byteOffset+=2){const v=Math.max(-1,Math.min(1,part[i]));view.setInt16(byteOffset,v<0?v*0x8000:v*0x7fff,true);}}
+   audioParts.length=0;
+   const blob=new Blob([wavBuffer],{type:'audio/wav'});if(latestUrl)URL.revokeObjectURL(latestUrl);latestUrl=URL.createObjectURL(blob);
    $('player').src=latestUrl;$('download').disabled=false;
    setStatus(stopRequested?'Audio parsial berhasil dibuat.':'Selesai! Audio siap diputar dan diunduh sebagai WAV.',100);
  }catch(err){console.error(err);setStatus('Gagal membuat audio: '+(err?.message||String(err))+'\nPeriksa koneksi internet, lalu coba lagi. Model membutuhkan browser modern dan memori perangkat yang cukup.');}
