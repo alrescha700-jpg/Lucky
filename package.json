@@ -1,1 +1,8 @@
-{"name":"storyvoice","version":"1.1.0","private":true}
+{
+  "name": "storyvoice-azure",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {"dev": "vercel dev"},
+  "dependencies": {}
+}

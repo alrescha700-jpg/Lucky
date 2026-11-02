@@ -1,117 +1,70 @@
 <!doctype html>
-<html lang="id">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>StoryVoice — Free Text to Audio</title>
+<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b1020"><title>StoryVoice Cloud — Azure TTS</title>
 <style>
-:root{--bg:#0b1020;--panel:#141c31;--muted:#9eabc4;--text:#f4f7ff;--accent:#8b7cff;--line:#293653}
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(900px 500px at 80% -10%,#302b68 0%,transparent 55%),var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-main{max-width:900px;margin:auto;padding:28px 16px 60px}.brand{display:flex;align-items:center;gap:12px;margin-bottom:22px}.logo{width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,#9d8cff,#4b9bff);display:grid;place-items:center;font-size:23px}.brand h1{font-size:22px;margin:0}.brand p{margin:2px 0 0;color:var(--muted);font-size:13px}
-.panel{background:rgba(20,28,49,.94);border:1px solid var(--line);border-radius:18px;padding:20px;margin:14px 0;box-shadow:0 14px 40px #0002}
-label{display:block;font-weight:650;margin:0 0 8px}.hint{color:var(--muted);font-size:12px;margin-top:6px}
-textarea,select,input{width:100%;border:1px solid var(--line);background:#0d1528;color:var(--text);border-radius:11px;padding:12px;font:inherit}
-textarea{min-height:190px;resize:vertical}select{cursor:pointer}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
-button{border:0;border-radius:11px;padding:12px 17px;font-weight:700;font-size:14px;cursor:pointer;background:#293653;color:var(--text)}button.primary{background:linear-gradient(135deg,#8b7cff,#587dff);color:white}button:disabled{opacity:.45;cursor:not-allowed}
-.status{padding:12px 14px;border-radius:11px;background:#0d1528;color:#c9d3e8;font-size:13px;margin-top:14px;white-space:pre-wrap}.bar{height:7px;background:#293653;border-radius:8px;overflow:hidden;margin-top:9px}.bar span{display:block;height:100%;width:0;background:#8b7cff;transition:width .2s}
-audio{width:100%;margin-top:14px}.small{font-size:12px;color:var(--muted)}.pill{display:inline-block;border:1px solid #435177;border-radius:30px;padding:3px 9px;font-size:11px;color:#c9c3ff;margin-left:6px}
-footer{color:var(--muted);font-size:12px;text-align:center;margin-top:20px}
-@media(max-width:620px){main{padding:20px 12px 40px}.grid{grid-template-columns:1fr}.panel{padding:16px}.brand h1{font-size:20px}}
-</style>
-</head>
-<body>
-<main>
-  <div class="brand"><div class="logo">🎙️</div><div><h1>StoryVoice <span class="pill">FREE TTS</span></h1><p>Text to speech untuk storytelling • berjalan di browser</p></div></div>
-  <section class="panel">
-    <label for="script">Naskah cerita</label>
-    <textarea id="script" maxlength="12000" placeholder="Tempel naskah storytelling kamu di sini...">Every great story begins with a moment nobody expects. He had lost everything, but deep inside, he knew this was not the end. It was the beginning of a new chapter.</textarea>
-    <div class="hint"><span id="count">0</span>/12.000 karakter. Mode hemat memori: proses bertahap; naskah sangat panjang tetap membutuhkan waktu lebih lama.</div>
-  </section>
-  <section class="panel">
-    <div class="grid">
-      <div><label for="voice">Karakter suara</label><select id="voice">
-        <option value="af_heart">Female — warm storyteller (US)</option>
-        <option value="af_bella">Female — expressive (US)</option>
-        <option value="af_nicole">Female — soft narration (US)</option>
-        <option value="am_michael">Male — mature narrator (US)</option>
-        <option value="am_fenrir">Male — deep dramatic (US)</option>
-        <option value="am_puck">Male — lively (US)</option>
-        <option value="bf_emma">Female — British</option>
-        <option value="bf_isabella">Female — British, gentle</option>
-        <option value="bm_george">Male — British</option>
-        <option value="bm_lewis">Male — British, warm</option>
-      </select></div>
-      <div><label>Bahasa suara</label><div class="status" style="margin:0">Model ini paling baik untuk bahasa Inggris (aksen Amerika dan Inggris). Pelafalan bahasa Indonesia tidak dijamin.</div></div>
-    </div>
-    <p class="hint">Mode hemat memori menggunakan model quantized Q4. Model tetap berjalan di browser; hasil audio dapat disimpan sebagai WAV.</p>
-    <div class="actions">
-      <button class="primary" id="generate">✨ Generate audio</button>
-      <button id="stop" disabled>Stop</button>
-      <button id="clear">Clear text</button>
-    </div>
-    <div class="status" id="status">Siap. Tekan Generate audio. Pada penggunaan pertama, browser akan mengunduh model AI (sekitar ratusan MB); koneksi internet diperlukan.</div>
-    <div class="bar"><span id="progress"></span></div>
-  </section>
-  <section class="panel">
-    <label>Preview & hasil audio</label>
-    <audio id="player" controls></audio>
-    <div class="actions">
-      <button class="primary" id="download" disabled>⬇ Download WAV</button>
-    </div>
-    <p class="small">File WAV dibuat langsung dari audio hasil model. Tidak perlu API key, akun, atau biaya per karakter. Mode Q4 mengurangi ukuran model dan penggunaan memori, tetapi kecepatan tetap bergantung pada prosesor dan browser HP.</p>
-  </section>
-  <section class="panel">
-    <b>Catatan penggunaan gratis</b>
-    <p class="small">Pemrosesan dilakukan di perangkat. Mode Q4 mengurangi kebutuhan memori dibanding Q8. Naskah panjang tetap membutuhkan waktu sesuai kemampuan HP. Jangan tutup tab saat proses berlangsung.</p>
-  </section>
-  <footer>StoryVoice • Prototype browser TTS • Tidak mengunggah naskah ke server aplikasi</footer>
-</main>
-<script type="module">
-import { KokoroTTS } from 'https://cdn.jsdelivr.net/npm/kokoro-js@1.2.1/+esm';
-
-const $ = id => document.getElementById(id);
-let tts = null, busy = false, latestUrl = null, stopRequested = false;
-const setStatus = (s,p=null) => { $('status').textContent=s; if(p!==null)$('progress').style.width=Math.max(0,Math.min(100,p))+'%'; };
-const yieldUI = () => new Promise(resolve => setTimeout(resolve, 30));
-const updateCount=()=> $('count').textContent=$('script').value.length;
-$('script').addEventListener('input',updateCount); updateCount();
-$('clear').onclick=()=>{$('script').value='';updateCount();};
-$('stop').onclick=()=>{stopRequested=true;setStatus('Permintaan berhenti diterima. Proses saat ini akan dihentikan setelah bagian yang sedang dibuat.');};
-$('download').onclick=()=>{if(!latestUrl)return;const a=document.createElement('a');a.href=latestUrl;a.download='storyvoice-narration.wav';a.click();};
-function splitText(text,max=420){
-  const sentences=text.match(/[^.!?。！？]+[.!?。！？]?/g)||[text], chunks=[];let current='';
-  for(const sentence of sentences){if((current+' '+sentence).trim().length<=max){current=(current+' '+sentence).trim();continue;}
-    if(current)chunks.push(current);
-    if(sentence.length>max){let rest=sentence;while(rest.length>max){let cut=rest.lastIndexOf(' ',max);if(cut<100)cut=max;chunks.push(rest.slice(0,cut).trim());rest=rest.slice(cut).trim();}current=rest;}
-    else current=sentence.trim();
-  }if(current)chunks.push(current);return chunks;
+:root{--bg:#0b1020;--panel:#141c31;--muted:#9eabc4;--text:#f4f7ff;--accent:#8b7cff;--line:#293653;--good:#5bd6a0;--warn:#ffd27a}*{box-sizing:border-box}body{margin:0;background:radial-gradient(900px 500px at 80% -10%,#302b68 0%,transparent 55%),var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}main{max-width:900px;margin:auto;padding:24px 14px 50px}.brand{display:flex;align-items:center;gap:12px;margin-bottom:20px}.logo{width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,#9d8cff,#4b9bff);display:grid;place-items:center;font-size:23px}.brand h1{font-size:22px;margin:0}.brand p{margin:2px 0 0;color:var(--muted);font-size:13px}.pill{display:inline-block;border:1px solid #435177;border-radius:30px;padding:3px 9px;font-size:11px;color:#c9c3ff;margin-left:6px}.panel{background:rgba(20,28,49,.96);border:1px solid var(--line);border-radius:18px;padding:18px;margin:14px 0;box-shadow:0 14px 40px #0002}label{display:block;font-weight:650;margin:0 0 8px}textarea,select{width:100%;border:1px solid var(--line);background:#0d1528;color:var(--text);border-radius:11px;padding:12px;font:inherit}textarea{min-height:230px;resize:vertical}select{min-height:46px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.hint,.small{color:var(--muted);font-size:12px;margin-top:7px}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:15px}button{border:0;border-radius:11px;padding:12px 17px;font-weight:700;font-size:14px;cursor:pointer;background:#293653;color:var(--text)}button.primary{background:linear-gradient(135deg,#8b7cff,#587dff);color:white}button:disabled{opacity:.45;cursor:not-allowed}.status{padding:12px 14px;border-radius:11px;background:#0d1528;color:#c9d3e8;font-size:13px;margin-top:14px;white-space:pre-wrap;overflow-wrap:anywhere}.bar{height:8px;background:#293653;border-radius:8px;overflow:hidden;margin-top:9px}.bar span{display:block;height:100%;width:0;background:#8b7cff;transition:width .2s}audio{width:100%;margin-top:14px}.notice{background:#0d1528;border-radius:12px;padding:12px;color:#c9d3e8;font-size:13px}.good{color:var(--good)}.warn{color:var(--warn)}.downloads{display:flex;gap:10px;flex-wrap:wrap}.downloads a{display:inline-block;text-decoration:none;color:white;background:#293653;padding:10px 13px;border-radius:10px;font-weight:650}.hidden{display:none}@media(max-width:620px){main{padding:18px 12px 40px}.grid{grid-template-columns:1fr}.panel{padding:15px}}
+</style></head><body><main>
+<div class="brand"><div class="logo">🎙️</div><div><h1>StoryVoice <span class="pill">AZURE CLOUD v2</span></h1><p>Text-to-speech cloud • Android & PC • MP3 / WAV</p></div></div>
+<section class="panel"><label for="script">Naskah cerita</label><textarea id="script" maxlength="50000" placeholder="Tempel naskah storytelling kamu di sini..."></textarea><div class="hint"><span id="count">0</span>/50.000 karakter. Naskah panjang diproses bertahap di cloud.</div></section>
+<section class="panel">
+<label for="azureKey">Azure Speech API Key</label>
+<input id="azureKey" type="password" autocomplete="off" placeholder="Tempel Azure Key 1 di sini" style="width:100%;border:1px solid var(--line);background:#0d1528;color:var(--text);border-radius:11px;padding:12px;font:inherit">
+<div class="grid" style="margin-top:12px">
+<div><label for="azureRegion">Azure Region</label><input id="azureRegion" type="text" autocomplete="off" placeholder="contoh: southeastasia" style="width:100%;border:1px solid var(--line);background:#0d1528;color:var(--text);border-radius:11px;padding:12px;font:inherit"></div>
+<div style="display:flex;align-items:end"><button id="saveKey" class="primary" style="width:100%">Simpan di sesi ini</button></div>
+</div>
+<div class="hint">Key disimpan sementara di sesi browser (sessionStorage), bukan di GitHub atau Vercel. Masukkan key milikmu sendiri. Jangan gunakan key pribadi pada perangkat umum.</div>
+</section>
+<section class="panel"><div class="grid"><div><label for="voice">Karakter suara</label><select id="voice"><optgroup label="English — US"><option value="en-US-JennyNeural">Jenny — Female, American</option><option value="en-US-AriaNeural">Aria — Female, American</option><option value="en-US-GuyNeural">Guy — Male, American</option><option value="en-US-ChristopherNeural">Christopher — Male, mature US</option></optgroup><optgroup label="English — UK"><option value="en-GB-SoniaNeural">Sonia — Female, British</option><option value="en-GB-RyanNeural">Ryan — Male, British</option></optgroup><optgroup label="Bahasa Indonesia"><option value="id-ID-GadisNeural">Gadis — Female, Indonesia</option><option value="id-ID-ArdiNeural">Ardi — Male, Indonesia</option></optgroup></select></div><div><label for="rate">Kecepatan suara</label><select id="rate"><option value="0">Normal</option></select><div class="hint">Kecepatan default Azure. Kontrol lanjutan dapat ditambahkan nanti.</div></div></div>
+<div class="notice" style="margin-top:14px"><b class="good">Azure direct mode.</b> Audio dibuat oleh layanan Azure. API Key digunakan langsung dari browser dan tidak dikirim ke backend StoryVoice.</div>
+<div class="actions"><button class="primary" id="mp3">✨ Generate MP3</button><button class="primary" id="wav">Generate WAV</button><button id="stop" disabled>Stop</button><button id="clear">Clear text</button></div><div class="status" id="status">Memeriksa konfigurasi Azure...</div><div class="bar"><span id="progress"></span></div><div class="small" id="progressText"></div></section>
+<section class="panel"><label>Preview & hasil audio</label><audio id="player" controls></audio><div class="downloads" id="downloads"></div><p class="small">MP3 lebih kecil dan disarankan untuk storytelling. WAV berukuran jauh lebih besar. Hasil kedua format dibuat dalam proses terpisah agar penggunaan kuota tidak terduplikasi tanpa pilihanmu.</p></section>
+<section class="panel"><b>Kuota gratis Azure dan batas pemakaian</b><p class="small">Azure Speech F0 mencantumkan 500.000 karakter Neural Text-to-Speech gratis per bulan. F0 membatasi hingga 20 transaksi per 60 detik. StoryVoice membagi teks menjadi bagian maksimal 1.800 karakter dan memberi jeda agar mendekati batas tersebut. Satu naskah 50.000 karakter memakai sekitar 50.000 karakter kuota untuk satu format. Membuat MP3 dan WAV secara terpisah akan memakai kuota dua kali. Kuota dan ketersediaan dapat berubah; pantau pemakaian di Azure Portal.</p><p class="small warn">Catatan: layanan gratis bukan tanpa batas. Azure dapat meminta metode pembayaran untuk verifikasi akun. Jangan bagikan API key. Naskah 50.000 karakter dapat memerlukan beberapa menit karena batas transaksi F0.</p></section>
+<footer class="small" style="text-align:center">StoryVoice Azure Direct • API Key hanya disimpan sementara di sesi browser</footer></main>
+<script src="https://aka.ms/csspeech/jsbrowserpackageraw"></script>
+<script>
+const $=id=>document.getElementById(id);let running=false,stopNow=false,activeUrl=null;const MAX_CHARS=50000,CHUNK=1800,WAIT_MS=3200;
+function setStatus(s,p){$('status').textContent=s;if(p!==undefined)$('progress').style.width=Math.max(0,Math.min(100,p))+'%'}
+function count(){ $('count').textContent=$('script').value.length }$('script').addEventListener('input',count);count();
+function splitText(src){let rest=src.trim(),out=[];while(rest.length>CHUNK){let cut=-1;for(const sep of ['. ','! ','? ','。','！','？','\n',' ']){const p=rest.lastIndexOf(sep,CHUNK);if(p>cut && p>CHUNK*.55)cut=p+(sep===' '||sep==='\n'?0:sep.length)}if(cut<1)cut=CHUNK;out.push(rest.slice(0,cut).trim());rest=rest.slice(cut).trim()}if(rest)out.push(rest);return out}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function getAzureCredentials(){
+  const key=$('azureKey').value.trim() || sessionStorage.getItem('sv_azure_key') || '';
+  const region=$('azureRegion').value.trim() || sessionStorage.getItem('sv_azure_region') || '';
+  if(!key || !region) throw new Error('Masukkan Azure Speech API Key dan Region terlebih dahulu.');
+  return {key,region};
 }
-$('generate').onclick=async()=>{
- if(busy)return;const text=$('script').value.trim();if(!text){setStatus('Masukkan naskah terlebih dahulu.');return;}
- busy=true;stopRequested=false;$('generate').disabled=true;$('stop').disabled=false;$('download').disabled=true;
- try{
-   if(!tts){setStatus('Mengunduh dan menyiapkan model AI. Pertama kali bisa memerlukan beberapa menit. Jangan tutup tab...',0); await yieldUI(); tts=await KokoroTTS.from_pretrained('onnx-community/Kokoro-82M-v1.0-ONNX',{dtype:'q4',device:'wasm',progress_callback:(info)=>{const pct=Number(info?.progress); if(Number.isFinite(pct)) setStatus(`Mengunduh model AI: ${Math.round(pct)}%`,Math.round(pct));}}); setStatus('Model siap. Menyiapkan pembuatan audio...',0); await yieldUI();}
-   const chunks=splitText(text);let audioParts=[],sampleRate=24000;
-   for(let i=0;i<chunks.length;i++){
-     if(stopRequested)break;
-     setStatus(`Membuat audio bagian ${i+1}/${chunks.length}. Mode Q4 hemat memori; proses satu bagian setiap kali.`,Math.round(i/chunks.length*100)); await yieldUI();
-     const out=await tts.generate(chunks[i],{voice:$('voice').value});
-     sampleRate=out.sampling_rate||sampleRate;
-     audioParts.push(out.audio instanceof Float32Array?out.audio:new Float32Array(out.audio));
-   }
-   if(!audioParts.length){setStatus('Proses dihentikan sebelum audio dibuat.');return;}
-   const total=audioParts.reduce((n,a)=>n+a.length,0);
-   const wavBuffer=new ArrayBuffer(44+total*2),view=new DataView(wavBuffer);
-   const write=(o,s)=>{for(let i=0;i<s.length;i++)view.setUint8(o+i,s.charCodeAt(i));};
-   write(0,'RIFF');view.setUint32(4,36+total*2,true);write(8,'WAVE');write(12,'fmt ');view.setUint32(16,16,true);view.setUint16(20,1,true);view.setUint16(22,1,true);view.setUint32(24,sampleRate,true);view.setUint32(28,sampleRate*2,true);view.setUint16(32,2,true);view.setUint16(34,16,true);write(36,'data');view.setUint32(40,total*2,true);
-   let byteOffset=44;for(const part of audioParts){for(let i=0;i<part.length;i++,byteOffset+=2){const v=Math.max(-1,Math.min(1,part[i]));view.setInt16(byteOffset,v<0?v*0x8000:v*0x7fff,true);}}
-   audioParts.length=0;
-   const blob=new Blob([wavBuffer],{type:'audio/wav'});if(latestUrl)URL.revokeObjectURL(latestUrl);latestUrl=URL.createObjectURL(blob);
-   $('player').src=latestUrl;$('download').disabled=false;
-   setStatus(stopRequested?'Audio parsial berhasil dibuat.':'Selesai! Audio siap diputar dan diunduh sebagai WAV.',100);
- }catch(err){console.error(err);setStatus('Gagal membuat audio: '+(err?.message||String(err))+'\nPeriksa koneksi internet, lalu coba lagi. Model membutuhkan browser modern dan memori perangkat yang cukup.');}
- finally{busy=false;$('generate').disabled=false;$('stop').disabled=true;}
+$('saveKey').onclick=()=>{
+  const key=$('azureKey').value.trim(), region=$('azureRegion').value.trim();
+  if(!key||!region){setStatus('Isi API Key dan Region terlebih dahulu.');return}
+  sessionStorage.setItem('sv_azure_key',key);
+  sessionStorage.setItem('sv_azure_region',region);
+  setStatus('Kredensial disimpan sementara sampai sesi browser berakhir.');
 };
-</script>
-</body>
-</html>
+$('azureKey').value=sessionStorage.getItem('sv_azure_key')||'';
+$('azureRegion').value=sessionStorage.getItem('sv_azure_region')||'';
+async function requestChunk(text,format){
+  const {key,region}=getAzureCredentials();
+  if(!window.SpeechSDK) throw new Error('Azure Speech SDK belum berhasil dimuat. Periksa koneksi internet dan muat ulang halaman.');
+  const sdk=window.SpeechSDK;
+  const speechConfig=sdk.SpeechConfig.fromSubscription(key,region);
+  speechConfig.speechSynthesisVoiceName=$('voice').value;
+  speechConfig.speechSynthesisOutputFormat=format==='mp3'
+    ? sdk.SpeechSynthesisOutputFormat.Audio24Khz160KBitRateMonoMp3
+    : sdk.SpeechSynthesisOutputFormat.Riff24Khz16BitMonoPcm;
+  const synthesizer=new sdk.SpeechSynthesizer(speechConfig,null);
+  try{
+    const result=await new Promise((resolve,reject)=>{
+      synthesizer.speakTextAsync(text,resolve,error=>reject(new Error(String(error))));
+    });
+    if(result.reason!==sdk.ResultReason.SynthesizingAudioCompleted){
+      throw new Error(result.errorDetails||'Azure tidak menghasilkan audio.');
+    }
+    return new Uint8Array(result.audioData);
+  }finally{synthesizer.close()}
+}
+function joinWav(parts){const pcm=[];let total=0;for(const bytes of parts){const v=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength);let pos=12,dataStart=-1,dataLen=0;while(pos+8<=bytes.length){const id=String.fromCharCode(bytes[pos],bytes[pos+1],bytes[pos+2],bytes[pos+3]);const len=v.getUint32(pos+4,true);if(id==='data'){dataStart=pos+8;dataLen=Math.min(len,bytes.length-dataStart);break}pos+=8+len+(len%2)}if(dataStart<0)throw new Error('Format WAV dari Azure tidak dikenali.');pcm.push(bytes.slice(dataStart,dataStart+dataLen));total+=dataLen}const out=new Uint8Array(44+total),dv=new DataView(out.buffer);const put=(o,s)=>{for(let i=0;i<s.length;i++)out[o+i]=s.charCodeAt(i)};put(0,'RIFF');dv.setUint32(4,36+total,true);put(8,'WAVE');put(12,'fmt ');dv.setUint32(16,16,true);dv.setUint16(20,1,true);dv.setUint16(22,1,true);dv.setUint32(24,24000,true);dv.setUint32(28,48000,true);dv.setUint16(32,2,true);dv.setUint16(34,16,true);put(36,'data');dv.setUint32(40,total,true);let off=44;for(const p of pcm){out.set(p,off);off+=p.length}return out}
+function concat(parts){let n=parts.reduce((a,b)=>a+b.length,0),out=new Uint8Array(n),p=0;for(const b of parts){out.set(b,p);p+=b.length}return out}
+async function generate(format){if(running)return;const text=$('script').value.trim();if(!text)return setStatus('Masukkan naskah terlebih dahulu.');if(text.length>MAX_CHARS)return setStatus('Naskah melebihi 50.000 karakter.');running=true;stopNow=false;$('mp3').disabled=$('wav').disabled=$('clear').disabled=true;$('stop').disabled=false;$('downloads').innerHTML='';setStatus('Menyiapkan naskah...',0);try{const chunks=splitText(text),parts=[];for(let i=0;i<chunks.length;i++){if(stopNow)break;setStatus(`Mengirim bagian ${i+1}/${chunks.length} ke Azure (${chunks[i].length} karakter)...`,Math.round(i/chunks.length*100));const bytes=await requestChunk(chunks[i],format);parts.push(bytes);setStatus(`Bagian ${i+1}/${chunks.length} selesai. ${i+1<chunks.length?'Menunggu batas permintaan gratis Azure...':'Menyusun audio...'}`,Math.round((i+1)/chunks.length*100));if(i<chunks.length-1&&!stopNow)await sleep(WAIT_MS)}if(!parts.length){setStatus('Proses dihentikan sebelum audio selesai.',0);return}if(stopNow){setStatus(`Dihentikan. ${parts.length}/${chunks.length} bagian sudah diproses; audio parsial tersedia.`,Math.round(parts.length/chunks.length*100))}else setStatus(`Selesai! ${chunks.length} bagian berhasil dibuat.`,100);const bytes=format==='wav'?joinWav(parts):concat(parts);const blob=new Blob([bytes],{type:format==='wav'?'audio/wav':'audio/mpeg'});if(activeUrl)URL.revokeObjectURL(activeUrl);activeUrl=URL.createObjectURL(blob);$('player').src=activeUrl;const a=document.createElement('a');a.href=activeUrl;a.download=`storyvoice-narration.${format}`;a.textContent=`⬇ Download ${format.toUpperCase()}`;$('downloads').appendChild(a)}catch(e){setStatus('Gagal: '+e.message+'\nPeriksa API Key, region, kuota Azure, dan koneksi internet.',0)}finally{running=false;$('mp3').disabled=$('wav').disabled=$('clear').disabled=false;$('stop').disabled=true}}
+$('mp3').onclick=()=>generate('mp3');$('wav').onclick=()=>generate('wav');$('stop').onclick=()=>{stopNow=true;setStatus('Menghentikan setelah bagian yang sedang berjalan selesai...')};$('clear').onclick=()=>{$('script').value='';count();$('player').removeAttribute('src');$('downloads').innerHTML='';if(activeUrl)URL.revokeObjectURL(activeUrl);activeUrl=null;setStatus('Teks dibersihkan.',0)};
+(async()=>{let n=0;if(window.SpeechSDK){setStatus('Azure Speech SDK siap. Masukkan API Key dan Region milikmu.',0);return}setStatus('Memuat Azure Speech SDK...',0);const t=setInterval(()=>{n++;if(window.SpeechSDK){clearInterval(t);setStatus('Azure Speech SDK siap. Masukkan API Key dan Region milikmu.',0)}else if(n>=20){clearInterval(t);setStatus('SDK belum termuat. Periksa koneksi internet lalu muat ulang halaman.',0)}},500)})();
+</script></body></html>

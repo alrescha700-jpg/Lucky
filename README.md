@@ -1,14 +1,14 @@
-# StoryVoice Optimized
+# StoryVoice Azure Direct (Vercel)
 
-Static Vercel project. Upload the contents of this folder to the GitHub repository.
+Users enter their own Azure Speech key and region in the page. The key is stored only in sessionStorage for the current browser session and is not committed to GitHub or stored in Vercel.
 
-## Changes in this build
-- Kokoro ONNX Q4 quantization on WASM to reduce model memory/download footprint compared with Q8.
-- Larger sentence-aware chunks (about 420 characters) to reduce repeated inference-call overhead.
-- WAV assembly writes samples directly into the final WAV buffer, avoiding an extra full-size Float32Array copy.
-- Supports up to 12,000 characters, though long scripts will still take time and use memory.
+## Deploy
+1. Upload the contents of this project to the root of your GitHub repository.
+2. Import/redeploy in Vercel. Framework preset: Other; Output Directory: `public`; no build command.
+3. Open the deployed site. Enter Azure Speech Key 1 and the resource region (for example `southeastasia`) in the app, then choose Save in this session.
 
-## Important
-This remains on-device TTS. It cannot guarantee fast synthesis on every Android phone. For consistently fast long-form generation, move inference to a server or use a hosted TTS API; that requires server resources and may not be free.
+## Security
+Direct browser mode sends the key from the browser directly to Azure Speech. The key can be inspected by the person using that browser/device. Do not hard-code a personal key into HTML or use a shared/public device. sessionStorage is temporary, not a secure vault. For a public app where visitors should not see the owner's key, use a server-side proxy and Vercel Environment Variables instead.
 
-Deploy on Vercel as a static project with Output Directory `public` and no build command.
+## Limits
+The app splits long text into sequential chunks. 50,000 characters is an app input limit, not a guarantee that every Azure account/region/voice can process it in one sitting. Check current Azure Speech pricing and quotas. MP3 and WAV are separate generation runs and each consumes character quota.
